@@ -1,0 +1,63 @@
+# Preemptive Warning Alert
+# Triggers when Oref Alert integration detects an incoming alert
+# for your selected areas (the "in the next few minutes" warning).
+# Turns on lights, announces via TTS, and activates sirens.
+#
+# Requires:
+#   - Oref Alert integration (https://github.com/amitfin/oref_alert)
+#   - TTS platform (e.g., Google Translate TTS)
+#   - Media player entity for announcements
+#
+# Customize:
+#   - Replace light entities with your own
+#   - Replace siren entities with your own (or remove if not applicable)
+#   - Replace media_player and TTS entities with your own
+#   - Remove MQTT/REST actions if not needed
+
+alias: "Red Alert - Preemptive Warning"
+description: >-
+  Fires when the Oref Alert integration reports an incoming alert
+  for your configured areas. Turns on lights, plays a TTS warning,
+  and activates sirens.
+triggers:
+  - entity_id: binary_sensor.oref_alert
+    attribute: selected_areas_updates
+    trigger: state
+conditions:
+  - condition: template
+    value_template: >-
+      {% set updates = trigger.to_state.attributes.selected_areas_updates %}
+      {% if updates %}
+        {{ 'בדקות הקרובות' in updates[0].get('text', '') or
+           'בדקות הקרובות' in updates[0].get('title', '') }}
+      {% else %}
+        false
+      {% endif %}
+actions:
+  # Turn on lights so occupants can navigate to shelter
+  - action: light.turn_on
+    data: {}
+    target:
+      entity_id:
+        - light.your_bedroom_lights
+        - light.your_living_room_lights
+        # Add your light entities here
+
+  # TTS announcement: "Red Alert - Warning"
+  - action: tts.speak
+    data:
+      cache: false
+      media_player_entity_id: media_player.your_speaker
+      message: "Red Alert. Warning. Red Alert. Warning."
+    target:
+      entity_id: tts.google_en_com  # Replace with your TTS entity
+
+  # Activate sirens (optional - remove if you don't have sirens)
+  - action: siren.turn_on
+    data: {}
+    target:
+      entity_id:
+        - siren.your_siren
+        # Add your siren entities here
+
+mode: parallel

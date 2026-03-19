@@ -1,0 +1,42 @@
+# Mass Alert - 100+ Active Alerts Across Israel
+# Triggers when the number of simultaneous active alerts nationwide
+# exceeds 100, indicating a major escalation.
+# Announces via TTS and creates a persistent notification.
+#
+# Requires:
+#   - Oref Alert integration (https://github.com/amitfin/oref_alert)
+#   - TTS platform (e.g., Google Translate TTS)
+#   - Media player entity for announcements
+#
+# Customize:
+#   - Replace media_player and TTS entities with your own
+#   - Adjust the threshold (100) as desired
+
+alias: "Red Alert - Mass Alert (100+ Active)"
+description: >-
+  Fires when more than 100 simultaneous alerts are active across
+  Israel, indicating a major escalation event.
+triggers:
+  - trigger: template
+    value_template: >-
+      {{ state_attr('binary_sensor.oref_alert', 'country_active_alerts') | length > 100 }}
+conditions: []
+actions:
+  # TTS announcement
+  - action: tts.speak
+    data:
+      cache: false
+      media_player_entity_id: media_player.your_speaker
+      message: "Attention. More than 100 alerts are currently active across Israel."
+    target:
+      entity_id: tts.google_en_com  # Replace with your TTS entity
+
+  # Persistent notification in HA dashboard
+  - action: notify.persistent_notification
+    data:
+      title: "Mass Alert: 100+ Active Alerts in Israel"
+      message: >-
+        There are currently more than 100 simultaneous active alerts
+        across Israel. Check Pikud HaOref for details.
+
+mode: single
