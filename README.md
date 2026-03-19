@@ -36,6 +36,23 @@ ok → pre_alert → alert → ok
 - **`alert`**: Active alert declared for your configured area. Take shelter.
 - **`ok`**: All clear.
 
+## Recommended Hardware
+
+A minimal setup for whole-home TTS alert coverage:
+
+| Item | Purpose | Notes |
+|------|---------|-------|
+| **1x Raspberry Pi** (3B+ or newer) | Runs Home Assistant | Pi 4 or Pi 5 recommended for better performance. Use an SSD instead of SD card for reliability. |
+| **1x Speaker** connected to the Pi | TTS announcements | Any powered speaker connected via 3.5mm audio jack or USB. For better coverage, use a Bluetooth speaker or a network speaker (e.g., Google Home / Nest) as the media player target. |
+| **Zigbee smart light bulbs** | Visual alert indicators | Any Zigbee-compatible color bulbs (e.g., IKEA TRADFRI, Philips Hue, Sonoff). The automations turn lights on during pre-alerts and can flash colors during active alerts. |
+| **Zigbee coordinator** | Connects Zigbee devices to HA | USB stick such as SONOFF Zigbee 3.0 Dongle Plus (ZBDongle-E) or ConBee II. Required for Zigbee bulbs. |
+
+**Optional additions:**
+
+- **Zigbee sirens** (e.g., HEIMAN HS2WD-E) — for audible siren alerts in addition to TTS
+- **Additional speakers** in different rooms — use HA speaker groups for simultaneous announcements
+- **UPS / battery backup** — keeps the alert system running during power outages (common during escalations)
+
 ## Prerequisites
 
 1. **Home Assistant** (2024.1+)
