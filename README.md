@@ -1,17 +1,41 @@
-# Home Assistant Oref Alert Automations
+# Oref Red Alert Automation System for Home Assistant
 
-A set of Home Assistant automations for the [Oref Alert](https://github.com/amitfin/oref_alert) integration that provide TTS (text-to-speech) announcements, light control, and notifications during red alert events in Israel.
+A comprehensive Home Assistant automation system for Israel's Pikud HaOref (Home Front Command) rocket alert system. Provides multi-sensory alerts through PA announcements with pre-recorded audio, RGB light color changes, light flickering, and siren activation.
 
 These automations have been tested in production during real alert events.
 
-## What's Included
+## What This Does
 
-| Automation | Trigger | What It Does |
-|---|---|---|
-| **Preemptive Warning** | `pre_alert` state (incoming alert for nearby areas) | Turns on lights, TTS: "Red Alert. Warning.", activates sirens |
-| **Active Alert** | `binary_sensor.oref_alert` turns `on` | Snapshots light state, TTS: "Red Alert. Active Alert. Seek shelter immediately.", plays alert audio, restores lights after 5 min |
-| **All Clear** | `binary_sensor.oref_alert` turns `off` | TTS: "All clear. The alert is over.", plays all-clear audio |
-| **Mass Alert** | 100+ simultaneous alerts nationwide | TTS: "More than 100 alerts active across Israel", persistent notification |
+When a red alert is triggered via the [Oref Alert integration](https://github.com/amitfin/oref_alert), these automations:
+
+1. **Pause any currently playing media** on your PA/announcement system
+2. **Play an airport-style chime** followed by a **pre-recorded voice announcement**
+3. **Change all RGB lights** to the alert color (red, orange, or green)
+4. **Flicker lights** and **activate sirens** for the duration of the alert phase
+5. **Hold the alert color** for 3 minutes so you know the alert state at a glance
+6. **Restore all lights** to their pre-alert state using scene snapshots
+7. **Resume media playback** on the PA system
+
+## Automations
+
+### Real Alerts (4 automations)
+
+| File | Trigger | Color | Sirens | Duration |
+|------|---------|-------|--------|----------|
+| `red_alert_early_warning.yaml` | Oref "next few minutes" preemptive warning | Orange | Yes | 30s flicker, 3 min hold |
+| `red_alert_active.yaml` | `binary_sensor.oref_alert` turns on | Red | Yes | 30s flicker, 3 min hold |
+| `red_alert_all_clear.yaml` | `binary_sensor.oref_alert` turns off | Green | No | 3 min hold |
+| `red_alert_100_plus.yaml` | 100+ simultaneous alerts across Israel | N/A | No | PA announcement only |
+
+### Test Automations (3 automations)
+
+| File | Color | Sirens | Duration |
+|------|-------|--------|----------|
+| `test_early_warning.yaml` | Orange | Yes | 15s countdown, 10s flicker, immediate restore |
+| `test_active_red_alert.yaml` | Red | Yes | 15s countdown, 10s flicker, immediate restore |
+| `test_all_clear.yaml` | Green | No | 15s countdown, 10s hold, immediate restore |
+
+Test automations have no trigger -- run them manually from the Home Assistant UI to verify your setup works without waiting for a real alert.
 
 ## How the Oref Alert Entity Works
 
@@ -19,123 +43,110 @@ The [Oref Alert integration](https://github.com/amitfin/oref_alert) provides sev
 
 | Entity | States | Description |
 |---|---|---|
-| `sensor.oref_alert` | `ok`, `pre_alert`, `alert` | Enum sensor for your configured area |
 | `binary_sensor.oref_alert` | `on` / `off` | Safety binary sensor; `on` = active alert for your area |
 
-The `binary_sensor.oref_alert` also has a `country_active_alerts` attribute containing a list of all currently active alerts across Israel, which the mass alert automation uses.
+The `binary_sensor.oref_alert` also has:
+- A `country_active_alerts` attribute containing all currently active alerts across Israel (used by the mass alert automation)
+- A `selected_areas_updates` attribute containing preemptive warnings with "בדקות הקרובות" (Hebrew for "in the coming minutes")
 
 ### Alert Lifecycle
 
 ```
-ok → pre_alert → alert → ok
-         │                 ▲
-         └─────────────────┘  (if alert doesn't reach your area)
+Normal → Pre-warning → Active Alert → All Clear
+                │                        ▲
+                └────────────────────────┘  (if alert doesn't reach your area)
 ```
 
-- **`pre_alert`**: Alerts are active in nearby areas; yours may be next. The `selected_areas_updates` attribute contains updates with "בדקות הקרובות" (Hebrew for "in the coming minutes") in the title or text.
-- **`alert`**: Active alert declared for your configured area. Take shelter.
-- **`ok`**: All clear.
+## Requirements
 
-## Recommended Hardware
+- **[Oref Alert integration](https://github.com/amitfin/oref_alert)** -- provides `binary_sensor.oref_alert` and area-specific alert data
+- **Multi-room audio system** -- tested with [Snapcast](https://github.com/badaix/snapcast) via [Music Assistant](https://music-assistant.io/), but any media_player entities that support `announce: true` should work
+- **RGB-capable smart lights** -- grouped into a single light group for color changes
+- **Smart sirens** (optional) -- Zigbee/Z-Wave sirens for audible alerts
+- **Pre-recorded audio files** -- included in the `audio/` directory
 
-A minimal setup for whole-home TTS alert coverage:
+## Audio Files
 
-| Item | Purpose | Notes |
-|------|---------|-------|
-| **1x Raspberry Pi** (3B+ or newer) | Runs Home Assistant | Pi 4 or Pi 5 recommended for better performance. Use an SSD instead of SD card for reliability. |
-| **1x Speaker** connected to the Pi | TTS announcements | Any powered speaker connected via 3.5mm audio jack or USB. For better coverage, use a Bluetooth speaker or a network speaker (e.g., Google Home / Nest) as the media player target. |
-| **Zigbee smart light bulbs** | Visual alert indicators | Any Zigbee-compatible color bulbs (e.g., IKEA TRADFRI, Philips Hue, Sonoff). The automations turn lights on during pre-alerts and can flash colors during active alerts. |
-| **Zigbee coordinator** | Connects Zigbee devices to HA | USB stick such as SONOFF Zigbee 3.0 Dongle Plus (ZBDongle-E) or ConBee II. Required for Zigbee bulbs. |
+All PA announcement audio files are in `audio/pa-messages/`. These were generated using **OpenAI TTS** with the **onyx** voice.
 
-**Optional additions:**
+The airport chime sound effect (`pa_chime_2.mp3`) is not included in this repository. The original chime used is by **Gustavo Rezende** and can be found on [Pixabay](https://pixabay.com/) -- search for "airport call" or use a similar chime sound. Place it in your Home Assistant media directory at the path referenced in the automations.
 
-- **Zigbee sirens** (e.g., HEIMAN HS2WD-E) — for audible siren alerts in addition to TTS
-- **Additional speakers** in different rooms — use HA speaker groups for simultaneous announcements
-- **UPS / battery backup** — keeps the alert system running during power outages (common during escalations)
+### Audio file list
 
-## Prerequisites
+| File | Used In | Description |
+|------|---------|-------------|
+| `pa_early_warning.mp3` | Early warning | Preemptive warning announcement |
+| `pa_active_alert.mp3` | Active alert | Active red alert announcement |
+| `pa_all_clear.mp3` | All clear | Alert over announcement |
+| `pa_mass_alert.mp3` | 100+ alerts | Mass alert announcement |
+| `pa_test_early_warning_countdown.mp3` | Test early warning | 15-second countdown before test |
+| `pa_test_early_warning_alert.mp3` | Test early warning | Test alert announcement |
+| `pa_test_early_warning_concluded.mp3` | Test early warning | Test concluded announcement |
+| `pa_test_active_alert_countdown.mp3` | Test active alert | 15-second countdown before test |
+| `pa_test_active_alert_alert.mp3` | Test active alert | Test alert announcement |
+| `pa_test_active_alert_concluded.mp3` | Test active alert | Test concluded announcement |
+| `pa_test_all_clear_countdown.mp3` | Test all clear | 15-second countdown before test |
+| `pa_test_all_clear_alert.mp3` | Test all clear | Test alert announcement |
+| `pa_test_all_clear_concluded.mp3` | Test all clear | Test concluded announcement |
 
-1. **Home Assistant** (2024.1+)
-2. **[Oref Alert integration](https://github.com/amitfin/oref_alert)** installed and configured with your area(s)
-3. **A TTS platform** configured (e.g., Google Translate TTS, Google Cloud TTS, Piper, etc.)
-4. **A media player** for announcements (e.g., Google Home, Nest speaker, or any HA media player)
+## How to Customize
 
-## Installation
+Every automation file includes `# CUSTOMIZE` comments at the points where you need to update entity IDs.
 
-### Option 1: Copy YAML into your automations
+### Entity IDs to Replace
 
-1. Open each YAML file in the `automations/` directory
-2. Copy the contents into your `automations.yaml` file (or your split automation files)
-3. Replace placeholder entities with your own (see [Customization](#customization))
-4. Reload automations in Home Assistant (Developer Tools > YAML > Reload Automations)
+1. **Light entities** -- Replace `light.living_room`, `light.bedroom`, etc. with your actual light entity IDs in:
+   - Scene snapshot lists (all lights you want to save/restore)
+   - Flicker target lists (lights that turn on/off rapidly during alerts)
 
-### Option 2: Use the Home Assistant UI
+2. **Light group** -- Replace `light.rgb_lights_group` with your own light group containing all RGB-capable lights
 
-1. Go to **Settings > Automations & Scenes > Create Automation**
-2. Switch to YAML mode (three-dot menu > Edit in YAML)
-3. Paste the contents of each automation file
-4. Replace placeholder entities with your own
-5. Save
+3. **Media player entities** -- Replace `media_player.speaker_1_snapcast`, `media_player.pa_system`, etc. with your actual media player entities
 
-### Option 3: Use the automation directory (advanced)
+4. **Siren entities** -- Replace `siren.siren_1`, `siren.siren_2`, `siren.siren_3` with your actual siren entity IDs (or remove siren actions if you don't have smart sirens)
 
-If you use split configuration, place the files in your automations directory and reference them from `configuration.yaml`:
+### Media Paths
 
-```yaml
-automation: !include_dir_list automations/
-```
+The automations reference audio files at:
+- Chime: `media-source://media_source/local/audio/soundfx/pa_chime_2.mp3`
+- Messages: `media-source://media_source/local/audio/pa-messages/pa_*.mp3`
 
-## Customization
+Upload the audio files from this repo's `audio/pa-messages/` directory to your Home Assistant's media directory, then update the paths in the automations if your directory structure differs.
 
-Each automation file contains placeholder entities that you need to replace with your own:
+### Optional Integrations
 
-| Placeholder | Replace With |
-|---|---|
-| `media_player.your_speaker` | Your media player entity (e.g., `media_player.living_room_speaker`) |
-| `tts.google_en_com` | Your TTS entity (e.g., `tts.piper`, `tts.google_cloud`) |
-| `light.your_*` | Your light entities |
-| `siren.your_siren` | Your siren entities (or remove the siren action) |
-| `your-alert-sound.mp3` | Path to your alert audio file in HA media |
-| `your-all-clear-sound.mp3` | Path to your all-clear audio file in HA media |
-
-### Optional Features
-
-These actions can be removed if not needed:
-
-- **Siren activation** (preemptive warning) — remove if you don't have smart sirens
-- **Audio file playback** (active alert & all clear) — remove if you only want TTS
-- **Light snapshot/restore** (active alert) — remove if you don't want light control
-- **MQTT publish** — removed in the template versions; add back if you use MQTT for external integrations
+The real alert automations include `# TODO` comments where you can add:
+- **MQTT publishing** for alert state tracking on other systems
+- **REST commands / webhooks** for external notifications (e.g., push notifications, logging)
+- **Custom scripts** (e.g., a dramatic siren ramp-up script)
 
 ### Adjusting the Mass Alert Threshold
 
-The mass alert automation triggers at 100+ simultaneous alerts. To change this, edit the template trigger in `mass_alert.yaml`:
+The mass alert automation triggers at 100+ simultaneous alerts. To change this, edit the template trigger in `red_alert_100_plus.yaml`:
 
 ```yaml
-value_template: >-
-  {{ state_attr('binary_sensor.oref_alert', 'country_active_alerts') | length > 50 }}
+value_template: "{{ state_attr('binary_sensor.oref_alert', 'country_active_alerts') | length > 50 }}"
 ```
 
-## TTS Messages
+## Installation
 
-| Automation | Message |
-|---|---|
-| Preemptive Warning | "Red Alert. Warning. Red Alert. Warning." |
-| Active Alert | "Red Alert. Active Alert. Red Alert. Active Alert. Seek shelter immediately." |
-| All Clear | "All clear. The alert is over. All clear." |
-| Mass Alert | "Attention. More than 100 alerts are currently active across Israel." |
-
-You can customize these messages in each automation's `tts.speak` action.
+1. Copy the YAML files from `automations/` into your Home Assistant automations directory (or paste them into the automation editor in YAML mode)
+2. Upload the audio files from `audio/pa-messages/` to your Home Assistant media directory
+3. Source an airport chime sound and place it at the chime path referenced in the automations
+4. Update all `# CUSTOMIZE` entity IDs to match your setup
+5. Reload automations in Home Assistant (Developer Tools > YAML > Reload Automations)
+6. Run each test automation manually to verify everything works
 
 ## How It Works in Practice
 
 During an alert cycle, the automations fire in sequence:
 
-1. **Pre-alert fires first** — lights turn on, TTS warns "Red Alert. Warning.", sirens activate
-2. **If the alert reaches your area** — active alert fires with "Seek shelter immediately" and plays the alert audio
-3. **When the alert ends** — all clear fires with "The alert is over" and plays the all-clear audio
+1. **Pre-warning fires first** -- lights turn orange, chime + PA announcement plays, sirens activate, lights flicker for 30 seconds
+2. **If the alert reaches your area** -- lights turn red, chime + PA announcement plays, sirens activate, lights flicker for 30 seconds
+3. **When the alert ends** -- lights turn green, chime + PA announcement plays, green holds for 3 minutes
+4. **After 3 minutes** -- all lights restore to their pre-alert state, media playback resumes
 
-The active alert automation uses `mode: restart`, so if a new alert arrives while the 5-minute light restore timer is running, it resets the timer.
+The active alert and early warning automations use `mode: restart`, so if a new alert arrives while the 3-minute hold timer is running, it resets.
 
 ## License
 
@@ -143,5 +154,7 @@ MIT
 
 ## Credits
 
-- [Oref Alert integration](https://github.com/amitfin/oref_alert) by Amit Finkelstein
-- Automations by [Daniel Rosehill](https://danielrosehill.com)
+- **[Oref Alert integration](https://github.com/amitfin/oref_alert)** by Amit Finkelstein
+- **Airport chime sound** by [Gustavo Rezende](https://pixabay.com/) via Pixabay
+- **PA voice announcements** generated with OpenAI TTS (onyx voice)
+- **Automations** by [Daniel Rosehill](https://danielrosehill.com)

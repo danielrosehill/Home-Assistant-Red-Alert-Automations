@@ -1,0 +1,55 @@
+# More Than 100 Active Alerts in Israel
+# Trigger: Template - country_active_alerts length > 100
+# Behavior: PA chime + pre-recorded audio on PA + persistent notification (no lights/sirens)
+#
+# CUSTOMIZE: Update all entity IDs to match your Home Assistant setup
+
+id: oref_mass_alert
+alias: "More than 100 active alerts in Israel"
+description: "Notify and announce via PA chime + pre-recorded audio when there are more than 100 simultaneous active alerts across Israel"
+triggers:
+  - trigger: template
+    value_template: "{{ state_attr('binary_sensor.oref_alert', 'country_active_alerts') | length > 100 }}"
+conditions: []
+actions:
+  - action: media_player.media_pause
+    target:
+      # CUSTOMIZE: Your PA/announcement media player
+      entity_id: media_player.pa_system
+  - action: media_player.volume_set
+    data:
+      volume_level: 1.0
+    target:
+      # CUSTOMIZE: All your speaker entities
+      entity_id:
+        - media_player.speaker_1_snapcast
+        - media_player.speaker_2_snapcast
+        - media_player.speaker_1
+        - media_player.speaker_2
+        - media_player.pa_system
+  - action: media_player.play_media
+    data:
+      media_content_id: media-source://media_source/local/audio/soundfx/pa_chime_2.mp3
+      media_content_type: audio/mpeg
+      announce: true
+    target:
+      entity_id: media_player.pa_system
+  - delay:
+      seconds: 4
+  - action: media_player.play_media
+    data:
+      media_content_id: media-source://media_source/local/audio/pa-messages/pa_mass_alert.mp3
+      media_content_type: audio/mpeg
+      announce: true
+    target:
+      entity_id: media_player.pa_system
+  - delay:
+      seconds: 8
+  - action: notify.persistent_notification
+    data:
+      title: "Mass Alert: 100+ Active Alerts in Israel"
+      message: "There are currently more than 100 simultaneous active alerts across Israel. Check Pikud HaOref for details."
+  - action: media_player.media_play
+    target:
+      entity_id: media_player.pa_system
+mode: single

@@ -1,0 +1,114 @@
+# TEST - All Clear
+# Trigger: Manual only
+# Behavior: PA chime + pre-recorded audio. 15s countdown, green RGB 10s, no sirens, restore, conclusion audio
+#
+# CUSTOMIZE: Update all entity IDs to match your Home Assistant setup
+
+id: oref_test_all_clear
+alias: "Test - All Clear"
+description: "Test all clear automation. PA chime + pre-recorded audio. 15s countdown, green RGB for 10s, no sirens, then restore."
+triggers: []
+conditions: []
+actions:
+  - action: media_player.media_pause
+    target:
+      # CUSTOMIZE: Your PA/announcement media player
+      entity_id: media_player.pa_system
+  - action: media_player.volume_set
+    data:
+      volume_level: 1.0
+    target:
+      # CUSTOMIZE: All your speaker entities
+      entity_id:
+        - media_player.speaker_1_snapcast
+        - media_player.speaker_2_snapcast
+        - media_player.speaker_1
+        - media_player.speaker_2
+        - media_player.pa_system
+  - action: media_player.play_media
+    data:
+      media_content_id: media-source://media_source/local/audio/soundfx/pa_chime_2.mp3
+      media_content_type: audio/mpeg
+      announce: true
+    target:
+      entity_id: media_player.pa_system
+  - delay:
+      seconds: 4
+  - action: media_player.play_media
+    data:
+      media_content_id: media-source://media_source/local/audio/pa-messages/pa_test_all_clear_countdown.mp3
+      media_content_type: audio/mpeg
+      announce: true
+    target:
+      entity_id: media_player.pa_system
+  - delay:
+      seconds: 15
+  - action: scene.create
+    data:
+      scene_id: pre_test_allclear_snapshot
+      # CUSTOMIZE: Add all lights you want to snapshot/restore
+      snapshot_entities:
+        - light.living_room
+        - light.bedroom
+        - light.office
+        - light.kitchen
+        - light.nursery
+        - light.bathroom
+        - light.patio_1
+        - light.patio_2
+        - light.indicator_1
+        - light.indicator_2
+  - action: light.turn_on
+    data:
+      rgb_color: [0, 255, 0]
+      brightness: 255
+    target:
+      entity_id: light.rgb_lights_group
+  - action: media_player.play_media
+    data:
+      media_content_id: media-source://media_source/local/audio/soundfx/pa_chime_2.mp3
+      media_content_type: audio/mpeg
+      announce: true
+    target:
+      entity_id: media_player.pa_system
+  - delay:
+      seconds: 4
+  - action: media_player.play_media
+    data:
+      media_content_id: media-source://media_source/local/audio/pa-messages/pa_test_all_clear_alert.mp3
+      media_content_type: audio/mpeg
+      announce: true
+    target:
+      entity_id: media_player.pa_system
+  - delay:
+      seconds: 5
+  - delay:
+      seconds: 10
+  - action: scene.turn_on
+    data: {}
+    target:
+      entity_id: scene.pre_test_allclear_snapshot
+  - delay:
+      seconds: 3
+  - action: media_player.play_media
+    data:
+      media_content_id: media-source://media_source/local/audio/soundfx/pa_chime_2.mp3
+      media_content_type: audio/mpeg
+      announce: true
+    target:
+      entity_id: media_player.pa_system
+  - delay:
+      seconds: 4
+  - action: media_player.play_media
+    data:
+      media_content_id: media-source://media_source/local/audio/pa-messages/pa_test_all_clear_concluded.mp3
+      media_content_type: audio/mpeg
+      announce: true
+    target:
+      entity_id: media_player.pa_system
+  - delay:
+      seconds: 5
+  - action: media_player.media_play
+    target:
+      entity_id: media_player.pa_system
+mode: single

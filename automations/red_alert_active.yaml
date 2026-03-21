@@ -1,0 +1,131 @@
+# Active Red Alert
+# Trigger: binary_sensor.oref_alert turns on
+# Behavior: PA chime + pre-recorded audio, red RGB + flicker + sirens 30s, red stays 3 min, then restore
+#
+# CUSTOMIZE: Update all entity IDs to match your Home Assistant setup
+
+id: oref_active_red_alert
+alias: "Active red alert"
+description: "Active red alert. PA chime + pre-recorded audio. Red RGB + flicker + sirens 30s. Red stays 3 min then restore."
+triggers:
+  - alias: "Red alert triggered"
+    entity_id: binary_sensor.oref_alert
+    to: "on"
+    trigger: state
+conditions: []
+actions:
+  - action: scene.create
+    data:
+      scene_id: pre_red_alert_snapshot
+      # CUSTOMIZE: Add all lights you want to snapshot/restore after the alert
+      snapshot_entities:
+        - light.living_room
+        - light.bedroom
+        - light.office
+        - light.kitchen
+        - light.nursery
+        - light.bathroom
+        - light.patio_1
+        - light.patio_2
+        - light.indicator_1
+        - light.indicator_2
+  - action: media_player.media_pause
+    target:
+      # CUSTOMIZE: Your PA/announcement media player
+      entity_id: media_player.pa_system
+  - action: light.turn_on
+    data:
+      rgb_color: [255, 0, 0]
+      brightness: 255
+    target:
+      # CUSTOMIZE: A group containing all your RGB-capable lights
+      entity_id: light.rgb_lights_group
+  - action: media_player.volume_set
+    data:
+      volume_level: 1.0
+    target:
+      # CUSTOMIZE: All your speaker entities
+      entity_id:
+        - media_player.speaker_1_snapcast
+        - media_player.speaker_2_snapcast
+        - media_player.speaker_1
+        - media_player.speaker_2
+        - media_player.pa_system
+  - action: media_player.play_media
+    data:
+      media_content_id: media-source://media_source/local/audio/soundfx/pa_chime_2.mp3
+      media_content_type: audio/mpeg
+      announce: true
+    target:
+      entity_id: media_player.pa_system
+  - delay:
+      seconds: 4
+  - action: media_player.play_media
+    data:
+      media_content_id: media-source://media_source/local/audio/pa-messages/pa_active_alert.mp3
+      media_content_type: audio/mpeg
+      announce: true
+    target:
+      entity_id: media_player.pa_system
+  - delay:
+      seconds: 8
+  # TODO: Add your own dramatic siren script here if desired (e.g., script.dramatic_red_alert_on_all_sirens)
+  - action: siren.turn_on
+    data: {}
+    target:
+      # CUSTOMIZE: Your siren entities
+      entity_id:
+        - siren.siren_1
+        - siren.siren_2
+        - siren.siren_3
+  - repeat:
+      count: 15
+      sequence:
+        - action: light.turn_off
+          data: {}
+          target:
+            # CUSTOMIZE: Lights to flicker on/off during alert
+            entity_id:
+              - light.living_room
+              - light.kitchen
+              - light.office
+              - light.nursery
+              - light.bathroom
+        - delay:
+            seconds: 1
+        - action: light.turn_on
+          data:
+            rgb_color: [255, 0, 0]
+            brightness: 255
+          target:
+            entity_id: light.rgb_lights_group
+        - action: light.turn_on
+          data: {}
+          target:
+            entity_id:
+              - light.living_room
+              - light.kitchen
+              - light.office
+              - light.nursery
+              - light.bathroom
+        - delay:
+            seconds: 1
+  - action: siren.turn_off
+    data: {}
+    target:
+      entity_id:
+        - siren.siren_1
+        - siren.siren_2
+        - siren.siren_3
+  # TODO: Add your own REST command / webhook here for external notifications
+  # TODO: Add your own MQTT publish action here if you use MQTT for alert state tracking
+  - delay:
+      minutes: 3
+  - action: scene.turn_on
+    data: {}
+    target:
+      entity_id: scene.pre_red_alert_snapshot
+  - action: media_player.media_play
+    target:
+      entity_id: media_player.pa_system
+mode: restart
