@@ -62,7 +62,6 @@ actions:
     data:
       media_content_id: media-source://media_source/local/audio/soundfx/pa_chime_2.mp3
       media_content_type: audio/mpeg
-      announce: true
     target:
       entity_id: media_player.pa_system
   - delay:
@@ -71,7 +70,6 @@ actions:
     data:
       media_content_id: media-source://media_source/local/audio/pa-messages/pa_early_warning.mp3
       media_content_type: audio/mpeg
-      announce: true
     target:
       entity_id: media_player.pa_system
   - delay:
@@ -131,7 +129,4 @@ actions:
     data: {}
     target:
       entity_id: scene.pre_early_warning_snapshot
-  - action: media_player.media_play
-    target:
-      entity_id: media_player.pa_system
 mode: restart

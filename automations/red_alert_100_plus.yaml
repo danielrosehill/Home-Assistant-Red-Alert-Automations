@@ -31,7 +31,6 @@ actions:
     data:
       media_content_id: media-source://media_source/local/audio/soundfx/pa_chime_2.mp3
       media_content_type: audio/mpeg
-      announce: true
     target:
       entity_id: media_player.pa_system
   - delay:
@@ -40,7 +39,6 @@ actions:
     data:
       media_content_id: media-source://media_source/local/audio/pa-messages/pa_mass_alert.mp3
       media_content_type: audio/mpeg
-      announce: true
     target:
       entity_id: media_player.pa_system
   - delay:
@@ -49,7 +47,4 @@ actions:
     data:
       title: "Mass Alert: 100+ Active Alerts in Israel"
       message: "There are currently more than 100 simultaneous active alerts across Israel. Check Pikud HaOref for details."
-  - action: media_player.media_play
-    target:
-      entity_id: media_player.pa_system
 mode: single
