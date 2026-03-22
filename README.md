@@ -8,7 +8,7 @@ These automations have been tested in production during real alert events.
 
 When a red alert is triggered via the [Oref Alert integration](https://github.com/amitfin/oref_alert), these automations:
 
-1. **Pause any currently playing media** on your PA/announcement system
+1. **Pause any currently playing media** on your PA/announcement system, disable repeat mode, and clear the playlist to prevent unwanted audio resumption
 2. **Play an airport-style chime** followed by a **pre-recorded voice announcement**
 3. **Change all RGB lights** to the alert color (red, orange, or green)
 4. **Flicker lights** and **activate sirens** for the duration of the alert phase
@@ -120,9 +120,11 @@ The real alert automations include `# TODO` comments where you can add:
 - **REST commands / webhooks** for external notifications (e.g., push notifications, logging)
 - **Custom scripts** (e.g., a dramatic siren ramp-up script)
 
-### Adjusting the Mass Alert Threshold
+### About the Mass Alert Threshold (100+)
 
-The mass alert automation triggers at 100+ simultaneous alerts. To change this, edit the template trigger in `red_alert_100_plus.yaml`:
+The mass alert automation triggers at 100+ simultaneous alerts across Israel. This threshold has been validated through real-world observation: from experience watching alert patterns, 100 is a reliable yardstick for a ballistic missile attack, even if it's not happening in your immediate area. Fewer than 50 simultaneous alerts tends to indicate a localized event (e.g., Hezbollah rockets targeting a specific region), whereas 100+ almost always indicates a ballistic missile strike (e.g., from Iran or Yemen). This distinction matters because ballistic missiles have a wider threat radius and longer flight time, giving you more reason to take shelter even if the alert isn't for your specific area.
+
+To adjust this threshold, edit the template trigger in `red_alert_100_plus.yaml`:
 
 ```yaml
 value_template: "{{ state_attr('binary_sensor.oref_alert', 'country_active_alerts') | length > 50 }}"

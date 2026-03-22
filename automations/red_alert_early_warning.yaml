@@ -40,6 +40,16 @@ actions:
     target:
       # CUSTOMIZE: Your PA/announcement media player
       entity_id: media_player.pa_system
+  - action: media_player.repeat_set
+    data:
+      repeat: "off"
+    target:
+      # CUSTOMIZE: Your PA/announcement media player
+      entity_id: media_player.pa_system
+  - action: media_player.clear_playlist
+    target:
+      # CUSTOMIZE: Your PA/announcement media player
+      entity_id: media_player.pa_system
   - action: light.turn_on
     data:
       rgb_color: [255, 165, 0]
